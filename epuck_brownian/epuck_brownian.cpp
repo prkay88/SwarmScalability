@@ -4,9 +4,10 @@
 #include <argos3/core/utility/configuration/argos_configuration.h>
 #include <argos3/core/utility/logging/argos_log.h>
 
-#include <cmath>
-#include <string>
-#include <sstream>
+#include <math.h> // for sin(), cos(), and pow()
+#include <stdlib.h> // For rand()
+#include <limits> // For max and min values
+
 
 /****************************************/
 /****************************************/
@@ -37,14 +38,15 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
     *
     * NOTE: ARGoS creates and initializes actuators and sensors
     * internally, on the basis of the lists provided the configuration
-    * file at the <controllers><epuck_mapping><actuators> and
-    * <controllers><epuck_mapping><sensors> sections. If you forgot to
+    * file at the <controllers><epuck_brownian><actuators> and
+    * <controllers><epuck_brownian><sensors> sections. If you forgot to
     * list a device in the XML and then you request it here, an error
     * occurs.
     */
    m_pcWheels    = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcProximity = GetSensor  <CCI_ProximitySensor             >("proximity"    );
    m_pcPosSens = GetSensor  <CCI_PositioningSensor        >("positioning"       );
+  
    /*
     * Parse the configuration file
     *
@@ -53,23 +55,12 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
     * have to recompile if we want to try other settings.
     */
    GetNodeAttributeOrDefault(t_node, "velocity", m_fWheelVelocity, m_fWheelVelocity);
-
-   std::cout << "Init() called" << std::endl;
 }
 
 /****************************************/
 /****************************************/
 
 void CEPuckBrownian::ControlStep() {
-   if(time_counter/10 > max_time){
-     time_counter = 0.0;
-     turning_time = rand()/INT_MAX;
-     m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
-     argos::LOG << "turning" << time_counter << std::endl;
-   }
-
-   // float distanceToGoal = sqrt((x - goal_x)^2 + (y - goal_y)^2);
-  
    /* Get the highest reading in front of the robot, which corresponds to the closest object */
    Real fMaxReadVal = m_pcProximity->GetReadings()[0];
    UInt32 unMaxReadIdx = 0;
@@ -98,46 +89,66 @@ void CEPuckBrownian::ControlStep() {
      }
    }
    else {
-     /* No, we don't: go straight */
-      m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
+     /* No, we don't: go straight for max_time_between_turns seconds*/
+
+     if ( time_spent_going_straight < max_time_between_turns )
+       {
+	 m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
+	 
+	 time_spent_going_straight++;
+       }
+     else
+       {
+	 if (time_spent_turning < max_time_turning)
+	   {
+	     if (turn_left)
+	       {
+		 m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
+	       }
+	     else
+	       {
+		 m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
+	       }
+	     time_spent_turning++;
+	   }
+	 else
+	   {
+	     time_spent_going_straight = 0;
+	     time_spent_turning = 0;
+	     max_time_between_turns = drawFromPowerLawDistribution( 5, 1000, -2.0 );
+	     
+	     // Choose amount to turn uniform randomly
+	     max_time_turning = (rand()*1.0f/RAND_MAX)*time_to_turn_2pi;
+
+	     // Choose next turn direction randomly
+	     turn_left = (rand()%2 == 0);
+	       
+	     // Brownian
+	     argos::LOG << "Turn Time: " << max_time_turning  << std::endl;
+	     argos::LOG << "Time Between Turns: " << max_time_between_turns  << std::endl;
+	   }
+       }
    }
 
-   float x = m_pcPosSens->GetReading().Position.GetX();
-   float y = m_pcPosSens->GetReading().Position.GetY();
-   int grid_x = 20+round(x*10);
-   int grid_y = 20+round(y*10);
-   
-   // argos::LOG << "Recording freespace at <" << x << ", " <<  y << "> to grid <" << grid_x  << ", " << grid_y << ">" << std::endl;
-
-   map[grid_x][grid_y]=true;
-
-   time_counter++;
-   // argos::LOG << "time_counter" << time_counter << std::endl;
-
 }
 
-void CEPuckBrownian::Destroy() {
-  std::cout << "Destroy() called" << std::endl;
-  std::stringstream ss;
-  ss << GetId();
-  std::fstream file_stream("Map"+ss.str()+".txt", std::ios::out | std::ios::trunc);
-  std::cout << "string\n" << std::endl;
-  //WriteMap(std::cout, map);
-  WriteMap(file_stream, map);
-}
 
-template<typename T, int height, int width>
-std::ostream& CEPuckBrownian::WriteMap(std::ostream& os, T (&map)[height][width])
+//Weisstein, Eric W. "Random Number." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/RandomNumber.html
+float CEPuckBrownian::drawFromPowerLawDistribution( float min, float max, float mu )
 {
-    for (int i = 0; i < height; ++i)
-    {
-        for (int j = 0; j < width; ++j)
-        {
-            os << map[i][j]<<", ";
-        }
-        os<<"\n";
-    }
-    return os;
+  float unif_var = rand()*1.0f/RAND_MAX;
+  argos::LOG << "Unif Rand: " << unif_var  << std::endl;
+  float min_power = pow(min, mu+1);
+  argos::LOG << "Min Power: " << min_power << std::endl;
+  float max_power = pow(max, mu+1);
+  argos::LOG << "Max Power: " << max_power  << std::endl;
+  float base_variate = (max_power-min_power)*unif_var+min_power;
+  argos::LOG << "Base Variate: " << base_variate  << std::endl;
+  float exponent = 1/(mu+1);
+  argos::LOG << "Exponent: " << exponent  << std::endl;
+  float p =  pow(base_variate, exponent);
+  argos::LOG << "Result: " << p << std::endl;
+  return p;
 }
 
 

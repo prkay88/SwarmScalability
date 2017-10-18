@@ -7,7 +7,7 @@
  * wheels to move the robot around.
  *
  * This controller is meant to be used with the XML files:
- *    experiments/epuck_mapping.argos
+ *    experiments/epuck_brownian.argos
  */
 
 #ifndef EPUCK_BROWNIAN_H
@@ -22,11 +22,9 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
 /* Definition of proximity sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_proximity_sensor.h>
-
 /* Definition of the positioning sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
 
-#include <limits>
 /*
  * All the ARGoS stuff in the 'argos' namespace.
  * With this statement, you save typing argos:: every time.
@@ -49,7 +47,7 @@ public:
    /*
     * This function initializes the controller.
     * The 't_node' variable points to the <parameters> section in the XML
-    * file in the <controllers><epuck_mapping_controller> section.
+    * file in the <controllers><epuck_brownian_controller> section.
     */
    virtual void Init(TConfigurationNode& t_node);
 
@@ -75,40 +73,36 @@ public:
     * so the function could have been omitted. It's here just for
     * completeness.
     */
-   virtual void Destroy();
+   virtual void Destroy() {}
 
 private:
 
+   float drawFromPowerLawDistribution( float min, float max, float mu );
+   
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
    CCI_ProximitySensor* m_pcProximity;
-   /* Pointer to the range-and-bearing sensor */
-
-
    CCI_PositioningSensor* m_pcPosSens;
-
-   // Writes the map to an output stream
-   // Templated so we can print maps that use
-   // ints, floats, or bools
-   template<typename T, int height, int width>
-     std::ostream& WriteMap(std::ostream& os, T (&map)[height][width]);   
 
    /*
     * The following variables are used as parameters for the
     * algorithm. You can set their value in the <parameters> section
     * of the XML configuration file, under the
-    * <controllers><epuck_mapping_controller> section.
+    * <controllers><epuck_brownian_controller> section.
     */
    /* Wheel speed. */
    Real m_fWheelVelocity;
+
    bool map[100][100];
 
-   float goal_x, goal_y = 0.0;
-   float max_time = 5.0;
-   float time_counter = 0.0;
-   float turning_time = 0.0;
-
+   float max_time_between_turns = 5; //seconds
+   float time_spent_turning = 0;
+   float max_time_turning = 0;
+   float time_spent_going_straight = 0;
+   float time_to_turn_2pi = 15;
+   bool turn_left = false;
+   
 };
 
 #endif

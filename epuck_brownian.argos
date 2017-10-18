@@ -23,10 +23,10 @@
       </actuators>
       <sensors>
         <proximity implementation="default" show_rays="true" />
-        	<positioning implementation="default"
-        		pos_noise_range="-0.1:0.2"
-        		angle_noise_range="-10.5:13.7"
-        		axis_noise_range="-0.3:0.4"/>
+	 <positioning implementation="default"
+                     pos_noise_range="-0.1:0.2"
+                     angle_noise_range="-10.5:13.7"
+                     axis_noise_range="-0.3:0.4" />
       </sensors>
       <params velocity="5" />
     </epuck_brownian_controller>
@@ -60,10 +60,11 @@
         from a gaussian distribution, whose mean is zero degrees and
         standard deviation is 360 degrees.
     -->
+   
     <distribute>
-      <position method="uniform" min="-2,-2,0" max="2,2,0" />
+      <position method="uniform" min="-0.5,-0.5,0" max="0.5,0.5,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
-      <entity quantity="8" max_trials="100">
+      <entity quantity="10" max_trials="100">
         <e-puck id="fb">
           <controller config="fdc" />
         </e-puck>
@@ -73,6 +74,7 @@
     <!--
         We distribute 5 boxes uniformly in position and rotation around Z.
     -->
+    <!--
     <distribute>
       <position method="uniform" min="-2,-2,0" max="2,2,0" />
       <orientation method="uniform" min="0,0,0" max="360,0,0" />
@@ -80,12 +82,13 @@
         <box id="b" size="0.3,0.3,0.5" movable="false" />
       </entity>
     </distribute>
-
+    -->
     <!--
         We distribute cylinders uniformly in position and with
         constant rotation (rotating a cylinder around Z does not
         matter)
     -->
+    <!--
     <distribute>
       <position method="uniform" min="-2,-2,0" max="2,2,0" />
       <orientation method="constant" values="0,0,0" />
@@ -93,6 +96,7 @@
         <cylinder id="c" height="0.5" radius="0.15" movable="false" />
       </entity>
     </distribute>
+    -->
 
   </arena>
 
