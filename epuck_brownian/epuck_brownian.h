@@ -24,6 +24,8 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_proximity_sensor.h>
 /* Definition of the positioning sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
+/* Definition of the eye-bot light sensor */
+#include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
 /* Definition of Range and Bearing Sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
 /* Definition of the differential steering actuator */
@@ -87,6 +89,10 @@ private:
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
    CCI_ProximitySensor* m_pcProximity;
+   
+    /* Pointer to the eye-bot light sensor */
+   CCI_EyeBotLightSensor* m_pcLightSens;
+
    CCI_PositioningSensor* m_pcPosSens;
    /* Pointer to the range and bearing actuator */
    CCI_RangeAndBearingActuator*  m_pcRABA;

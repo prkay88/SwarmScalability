@@ -3,7 +3,6 @@
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 #include <argos3/core/utility/logging/argos_log.h>
-
 #include <math.h> // for sin(), cos(), and pow()
 #include <stdlib.h> // For rand()
 #include <limits> // For max and min values
@@ -17,9 +16,9 @@ CEPuckBrownian::CEPuckBrownian() :
    m_pcProximity(NULL),
    m_pcRABA(NULL),
    m_pcRABS(NULL),
+   m_pcLightSens(NULL),
    m_fWheelVelocity(2.5f) {}
-   //m_pcLightSens(NULL) {}
-
+   
 /****************************************/
 /****************************************/
 
