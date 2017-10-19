@@ -16,6 +16,7 @@ CEPuckBrownian::CEPuckBrownian() :
    m_pcWheels(NULL),
    m_pcProximity(NULL),
    m_fWheelVelocity(2.5f) {}
+   //m_pcLightSens(NULL) {}
 
 /****************************************/
 /****************************************/
@@ -45,7 +46,8 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
     */
    m_pcWheels    = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcProximity = GetSensor  <CCI_ProximitySensor             >("proximity"    );
-   m_pcPosSens = GetSensor  <CCI_PositioningSensor        >("positioning"       );
+   m_pcPosSens   = GetSensor  <CCI_PositioningSensor           >("positioning"       );
+   m_pcLightSens = GetSensor  <CCI_EyeBotLightSensor           >("eyebot_light"      );
   
    /*
     * Parse the configuration file
@@ -93,7 +95,7 @@ void CEPuckBrownian::ControlStep() {
 
      if ( time_spent_going_straight < max_time_between_turns )
        {
-	 m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
+	  m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
 	 
 	 time_spent_going_straight++;
        }
