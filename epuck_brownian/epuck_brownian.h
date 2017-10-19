@@ -24,6 +24,10 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_proximity_sensor.h>
 /* Definition of the positioning sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
+/* Definition of Range and Bearing Sensor */
+#include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
+/* Definition of the differential steering actuator */
+#include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -78,13 +82,16 @@ public:
 private:
 
    float drawFromPowerLawDistribution( float min, float max, float mu );
-   
+
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
    CCI_ProximitySensor* m_pcProximity;
    CCI_PositioningSensor* m_pcPosSens;
-
+   /* Pointer to the range and bearing actuator */
+   CCI_RangeAndBearingActuator*  m_pcRABA;
+   /* Pointer to the range and bearing sensor */
+   CCI_RangeAndBearingSensor* m_pcRABS;
    /*
     * The following variables are used as parameters for the
     * algorithm. You can set their value in the <parameters> section
@@ -102,7 +109,7 @@ private:
    float time_spent_going_straight = 0;
    float time_to_turn_2pi = 15;
    bool turn_left = false;
-   
+
 };
 
 #endif

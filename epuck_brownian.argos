@@ -20,14 +20,18 @@
                                         library="build/controllers/epuck_brownian/libepuck_brownian.so">
       <actuators>
         <differential_steering implementation="default" />
+        <range_and_bearing implementation="default"/>
       </actuators>
       <sensors>
-        <proximity implementation="default" show_rays="true" />
+        <proximity implementation="default" show_rays="false" />
 	      <positioning implementation="default"
                      pos_noise_range="-0.1:0.2"
                      angle_noise_range="-10.5:13.7"
-                     axis_noise_range="-0.3:0.4" />   
-        <eyebot_light implementation="rot_z_only" show_rays="true" />         
+                     axis_noise_range="-0.3:0.4" />
+        <eyebot_light implementation="rot_z_only" show_rays="true" />
+        <range_and_bearing implementation="medium"
+                            medium="rab"
+                            show_rays="true"/>
       </sensors>
       <params velocity="5" />
     </epuck_brownian_controller>
@@ -61,7 +65,7 @@
         from a gaussian distribution, whose mean is zero degrees and
         standard deviation is 360 degrees.
     -->
-   
+
     <distribute>
       <position method="uniform" min="-0.5,-0.5,0" max="0.5,0.5,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
@@ -113,6 +117,7 @@
   <!-- ********* -->
   <media>
     <led id="light" />
+    <range_and_bearing id="rab"/>
   </media>
 
 

@@ -15,6 +15,8 @@
 CEPuckBrownian::CEPuckBrownian() :
    m_pcWheels(NULL),
    m_pcProximity(NULL),
+   m_pcRABA(NULL),
+   m_pcRABS(NULL),
    m_fWheelVelocity(2.5f) {}
    //m_pcLightSens(NULL) {}
 
@@ -48,7 +50,8 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
    m_pcProximity = GetSensor  <CCI_ProximitySensor             >("proximity"    );
    m_pcPosSens   = GetSensor  <CCI_PositioningSensor           >("positioning"       );
    m_pcLightSens = GetSensor  <CCI_EyeBotLightSensor           >("eyebot_light"      );
-  
+   m_pcRABA      = GetActuator<CCI_RangeAndBearingActuator     >("range_and_bearing"    );
+   m_pcRABS      = GetSensor  <CCI_RangeAndBearingSensor       >("range_and_bearing"    );
    /*
     * Parse the configuration file
     *
@@ -95,9 +98,9 @@ void CEPuckBrownian::ControlStep() {
 
      if ( time_spent_going_straight < max_time_between_turns )
        {
-	  m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
-	 
-	 time_spent_going_straight++;
+	       m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
+
+	       time_spent_going_straight++;
        }
      else
        {
@@ -118,13 +121,13 @@ void CEPuckBrownian::ControlStep() {
 	     time_spent_going_straight = 0;
 	     time_spent_turning = 0;
 	     max_time_between_turns = drawFromPowerLawDistribution( 5, 1000, -2.0 );
-	     
+
 	     // Choose amount to turn uniform randomly
 	     max_time_turning = (rand()*1.0f/RAND_MAX)*time_to_turn_2pi;
 
 	     // Choose next turn direction randomly
 	     turn_left = (rand()%2 == 0);
-	       
+
 	     // Brownian
 	     argos::LOG << "Turn Time: " << max_time_turning  << std::endl;
 	     argos::LOG << "Time Between Turns: " << max_time_between_turns  << std::endl;
@@ -133,6 +136,7 @@ void CEPuckBrownian::ControlStep() {
    }
 
 }
+
 
 
 //Weisstein, Eric W. "Random Number." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/RandomNumber.html
