@@ -29,6 +29,8 @@
 /* Definition of the differential steering actuator */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
 
+#include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
+
 /*
  * All the ARGoS stuff in the 'argos' namespace.
  * With this statement, you save typing argos:: every time.
@@ -92,6 +94,8 @@ private:
    CCI_RangeAndBearingActuator*  m_pcRABA;
    /* Pointer to the range and bearing sensor */
    CCI_RangeAndBearingSensor* m_pcRABS;
+
+   CCI_EyeBotLightSensor* m_pcLightSens;
    /*
     * The following variables are used as parameters for the
     * algorithm. You can set their value in the <parameters> section
@@ -109,6 +113,12 @@ private:
    float time_spent_going_straight = 0;
    float time_to_turn_2pi = 15;
    bool turn_left = false;
+
+   float repulsionDistance = 5.0; //Max distance that a robot repulses another
+   float timeSinceLastAvoidance = 0;
+   float moveTowardsFlockThreshold = 2.5;
+
+   enum State {FLOCKING, SEEN_GOAL, DEAD,   }; //Add other two error states
 
 };
 

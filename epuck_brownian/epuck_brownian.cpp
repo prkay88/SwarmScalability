@@ -17,6 +17,7 @@ CEPuckBrownian::CEPuckBrownian() :
    m_pcProximity(NULL),
    m_pcRABA(NULL),
    m_pcRABS(NULL),
+   m_pcLightSens(NULL),
    m_fWheelVelocity(2.5f) {}
    //m_pcLightSens(NULL) {}
 
@@ -137,7 +138,50 @@ void CEPuckBrownian::ControlStep() {
 
 }
 
+CVector2 CEyeBotFlocking::FlockingVector(){
+  const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABSens->GetReadings();
+  if(! tMsgs.empty()) {
+    CVector2 resultVector;
+    UInt32 inRadiusCount=0;
+    for(size_t i = 0; i < tMsgs.size(); ++i) {
+       if(tMsgs[i].Data[0] != DEAD){
+          if(tMsgs[i].Range < repulsionDistance){
+            /*Not sure if this is the right way to calculate the vector */
+            resultVector += CVector2(tMsgs[i].Range, tMsgs[i].HorizontalBearing);
+            inRadiusCount++;
+          }
+       }
+    }
+    if(inRadiusCount > 0){
+      resultVector /= inRadiusCount;
+      timeSinceLastAvoidance = 0;
+      return resultVector;
+    }
+    /* This will be the attractive behavior */
+    else if(timeSinceLastAvoidance < moveTowardsFlockThreshold){
+      /*We want to continue same direction we're currently going */
+      timeSinceLastAvoidance++;
+      return CVector2();
+    }
+    else{
+      CVector2 averageBearing;
+      Int countOFAliveBots=0;
+      for(size_t i =0; i <tMsgs.size(); i++){
+        /*Move towards center of swarm */
+        if(tMsgs[i].Data[0] != DEAD){
+          averageBearing += CVector2(0, tMsgs[i].HorizontalBearing);
+          countOFAliveBots++;
+        }
+      }
+      if(countOFAliveBots > 0){
+        averageBearing /= countOFAliveBots;
+      }
+      return averageBearing;
+    }
+  }
+  return CVector2();
 
+}
 
 //Weisstein, Eric W. "Random Number." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/RandomNumber.html
 float CEPuckBrownian::drawFromPowerLawDistribution( float min, float max, float mu )
