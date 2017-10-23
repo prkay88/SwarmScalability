@@ -24,8 +24,6 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_proximity_sensor.h>
 /* Definition of the positioning sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
-/* Definition of the eye-bot light sensor */
-#include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
 /* Definition of Range and Bearing Sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
 /* Definition of the differential steering actuator */
@@ -83,18 +81,19 @@ public:
     */
    virtual void Destroy() {}
 
+   virtual void FlockingVector();
+
+   virtual void epuckObstacleAvoidance();
 private:
 
    float drawFromPowerLawDistribution( float min, float max, float mu );
+
+
 
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
    CCI_ProximitySensor* m_pcProximity;
-   
-    /* Pointer to the eye-bot light sensor */
-   CCI_EyeBotLightSensor* m_pcLightSens;
-
    CCI_PositioningSensor* m_pcPosSens;
    /* Pointer to the range and bearing actuator */
    CCI_RangeAndBearingActuator*  m_pcRABA;
@@ -122,8 +121,9 @@ private:
 
    float repulsionDistance = 5.0; //Max distance that a robot repulses another
    float timeSinceLastAvoidance = 0;
-   float moveTowardsFlockThreshold = 2.5;
-
+   float moveTowardsFlockThreshold = 25;
+   bool turningTowardsFlock = false;
+   float angleAccumulator;
    enum State {FLOCKING, SEEN_GOAL, DEAD,   }; //Add other two error states
 
 };
