@@ -81,19 +81,22 @@ public:
     */
    virtual void Destroy() {}
 
-   virtual void FlockingVector();
+ 
 
-   virtual void epuckObstacleAvoidance();
 private:
 
-   float drawFromPowerLawDistribution( float min, float max, float mu );
 
+   void flockingVector();
+   void epuckObstacleAvoidance();
+   float drawFromPowerLawDistribution( float min, float max, float mu );
+   bool detectedBeaconLight();
 
 
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
    CCI_ProximitySensor* m_pcProximity;
+
    CCI_PositioningSensor* m_pcPosSens;
    /* Pointer to the range and bearing actuator */
    CCI_RangeAndBearingActuator*  m_pcRABA;

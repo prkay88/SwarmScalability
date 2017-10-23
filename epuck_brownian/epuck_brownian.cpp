@@ -67,10 +67,10 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CEPuckBrownian::ControlStep() {
-   FlockingVector();
+   flockingVector();
 }
 
-void CEPuckBrownian::FlockingVector(){
+void CEPuckBrownian::flockingVector(){
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
   if(! tMsgs.empty()) {
@@ -196,6 +196,20 @@ float CEPuckBrownian::drawFromPowerLawDistribution( float min, float max, float 
   float p =  pow(base_variate, exponent);
   argos::LOG << "Result: " << p << std::endl;
   return p;
+}
+
+bool CEPuckBrownian::detectedBeaconLight()
+{
+  bool detectedLight = false;
+  const CCI_EyeBotLightSensor::TReadings& lightReadings = m_pcLightSens->GetReadings();
+
+  for(size_t i =0; i < lightReadings.size(); ++i){
+    if(lightReadings[i].Value > 0.0){
+      detectedLight = true;
+      argos::LOG << "Beacon light detected" << std::endl;
+    }
+  }
+  return detectedLight;
 }
 
 
