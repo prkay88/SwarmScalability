@@ -1,0 +1,17 @@
+TO DO:::
+  1) Improve long range attraction such that the swarm keeps its density
+  2) Implement behavior for those that have seen Beacon
+    i) Create a state that reflects having seen the Beacon
+    ii) change FlockingVector so that it takes a repulsion distance as a parameter
+  3) Change the ControlStep method to switch on the different states
+    i) This involves creating all of the states we need and what behavior they should do in each state
+  4) Decide on how we want to say the flock has achieved its goal (Exit Condition)
+  5) Write output to files that we can Parse
+    i) We will need the number of robots and the amount of time to reach the Beacon
+  6) In matlab or python write script to parse data and put it into a form we can plot
+  7) Implement sending of states through the RAB sensor.
+  8) Write bash script to automate expirement runs.
+  9) Put type of error in XML
+
+
+Phill: 1,2,3,7 by Wednesday Class time
