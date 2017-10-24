@@ -81,7 +81,7 @@ public:
     */
    virtual void Destroy() {}
 
- 
+
 
 private:
 
@@ -122,9 +122,9 @@ private:
    float time_to_turn_2pi = 15;
    bool turn_left = false;
 
-   float repulsionDistance = 5.0; //Max distance that a robot repulses another
+   float repulsionDistance = 2.5; //Max distance that a robot repulses another
    float timeSinceLastAvoidance = 0;
-   float moveTowardsFlockThreshold = 25;
+   float moveTowardsFlockThreshold = 2.5;
    bool turningTowardsFlock = false;
    float angleAccumulator;
    enum State {FLOCKING, SEEN_GOAL, DEAD,   }; //Add other two error states

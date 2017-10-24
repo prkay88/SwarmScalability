@@ -73,6 +73,7 @@ void CEPuckBrownian::ControlStep() {
 void CEPuckBrownian::flockingVector(){
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
+  argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
   if(! tMsgs.empty()) {
     UInt32 inRadiusCount=0;
     for(size_t i = 0; i < tMsgs.size(); ++i) {
@@ -86,7 +87,7 @@ void CEPuckBrownian::flockingVector(){
        }
     }
     if(inRadiusCount > 0){
-
+      argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
       epuckObstacleAvoidance();
     }
     /* Continue going until we've reached the threshold before turning back to the flock */
@@ -94,10 +95,12 @@ void CEPuckBrownian::flockingVector(){
       /*We want to continue same direction we're currently going */
       m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
       timeSinceLastAvoidance++;
+      argos::LOG <<"Moving straight with timeSinceLastAvoidance = " << timeSinceLastAvoidance <<std::endl;
 
     }
     /* This will be the attractive behavior */
     else{
+      argos::LOG << "Inside attractive behavior" << std::endl;
       if(!turningTowardsFlock){
         for(size_t i =0; i <tMsgs.size(); i++){
           /*Move towards center of swarm */
@@ -112,12 +115,14 @@ void CEPuckBrownian::flockingVector(){
           float angleAccFloat = (float) angleAccumulator;
           float term =  (time_to_turn_2pi/(2*M_PI));
           max_time_turning = (angleAccFloat*term);
+          argos::LOG <<"max_time_turning: " << max_time_turning << std::endl;
           if(angleAccFloat <0){
             m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
             turn_left = true;
           }
           else{
             m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
+            turn_left = false;
           }
           time_spent_turning++;
           turningTowardsFlock = true;
