@@ -2,11 +2,13 @@
 #include "epuck_brownian.h"
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
+/* Function definitions for logging */
 #include <argos3/core/utility/logging/argos_log.h>
 
 #include <math.h> // for sin(), cos(), and pow()
 #include <stdlib.h> // For rand()
 #include <limits> // For max and min values
+
 
 
 /****************************************/
@@ -47,6 +49,7 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
     * list a device in the XML and then you request it here, an error
     * occurs.
     */
+  // m_pcPosAct    = GetActuator<CCI_QuadRotorPositionActuator   >("quadrotor_position");
    m_pcWheels    = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcProximity = GetSensor  <CCI_ProximitySensor             >("proximity"    );
    m_pcPosSens   = GetSensor  <CCI_PositioningSensor           >("positioning"       );
@@ -67,16 +70,20 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
    GetNodeAttribute(t_node, "LongRepulsionDistance",   LongRepulsionDistance);
    GetNodeAttribute(t_node, "TimeForFailureTicks",     TimeForFailureTicks);
    GetNodeAttribute(t_node, "OmegaTimeTicks",          OmegaTimeTicks);
+   GetNodeAttribute(t_node, "BeaconPosition",          BeaconPosition);
 }
 
 /****************************************/
 /****************************************/
 
 void CEPuckBrownian::ControlStep() {
-   flockingVector();
+   //flockingVector();
+   //flockReachedBeacon();
+   motorFailure();
 }
 
 void CEPuckBrownian::flockingVector(){
+
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
   argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
@@ -144,6 +151,7 @@ void CEPuckBrownian::flockingVector(){
         //return averageBearing;
         timeSinceLastAvoidance = 0;
       }
+      //This is where we are turning towards the flocks
       else{
         if(time_spent_turning < max_time_turning){
           if(turn_left){
@@ -153,6 +161,7 @@ void CEPuckBrownian::flockingVector(){
             m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
           }
         }
+        //if exceed max time we go stright.
         else{
           m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
           turningTowardsFlock = false;
@@ -216,6 +225,8 @@ float CEPuckBrownian::drawFromPowerLawDistribution( float min, float max, float 
   return p;
 }
 
+/* Stimulates the robots sensing the beacon using their light sensors.
+   If one robot senses the beacon return true. */
 bool CEPuckBrownian::detectedBeaconLight()
 {
   bool detectedLight = false;
@@ -223,13 +234,63 @@ bool CEPuckBrownian::detectedBeaconLight()
 
   for(size_t i =0; i < lightReadings.size(); ++i){
     if(lightReadings[i].Value > 0.0){
-      detectedLight = true;
-      argos::LOG << "Beacon light detected" << std::endl;
+      argos::LOG << "Beacon light detected " << std::endl;
+      return true;
     }
   }
-  return detectedLight;
+  return false;
 }
 
+/* Checks if any rover is within the ShortRepulsionDistance using 
+   the QuadRotorPositionActuator to the beacon and returns a boolean */
+bool CEPuckBrownian::flockReachedBeacon()
+{
+  //m_pcPosAct->SetAbsolutePosition(BeaconPosition);
+  // if(Distance(BeaconPosition, m_pcPosSens->GetReading().Position) > ShortRepulsionDistance) {
+  //   return false;
+  // }
+  argos::LOG << "Beacon light reached " << std::endl;
+  return true;
+}
+
+/* CASE 1: Failure when the robots are dead due to powerfailure */
+void CEPuckBrownian::powerFailure()
+{ 
+  m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
+}
+
+/* CASE 2: Failure when the robots sensor fails result in the robot getting lost, just preform obstacle avoidence*/
+void CEPuckBrownian::sensorFailure()
+{
+  epuckObstacleAvoidance();
+}
+
+/* CASE 3: Failure when the right, left, or both wheels are broken */
+void CEPuckBrownian::motorFailure()
+{
+  const char motorErrorsTypes[4] = {'0', '1', '2'};
+  int randType = rand() % 3; //generates a random number between 0 and 2
+  argos::LOG << motorErrorsTypes[randType] << std::endl;
+
+  /* spin left - right motor broken */
+  if(randType == 0)
+  {
+    m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
+  }
+
+  /* spin right - left motor broken */
+  else if(randType == 1)
+  {
+    m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
+  }
+
+  /* stop - both motors are broken, powerfailure */
+  else
+  {
+     m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
+  }
+
+}
 
 /****************************************/
 /****************************************/

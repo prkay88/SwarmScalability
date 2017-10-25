@@ -18,6 +18,8 @@
  */
 /* Definition of the CCI_Controller class. */
 #include <argos3/core/control_interface/ci_controller.h>
+/* Definition of the quadrotor positioning actuator */
+#include <argos3/plugins/robots/generic/control_interface/ci_quadrotor_position_actuator.h>
 /* Definition of the differential steering actuator */
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
 /* Definition of proximity sensor */
@@ -28,8 +30,10 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
 /* Definition of the differential steering actuator */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
-
+/* Definition of the light sensor */
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
+/* Definition of the CRange variable */
+#include <argos3/core/utility/math/range.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -85,32 +89,38 @@ public:
 
 private:
 
-
-	/* Settings variables */
-	int NumberOfRobots;
-	int NumberOfDeadRobots;
-	int ShortRepulsionDistance;
-	int LongRepulsionDistance;
-	int TimeForFailureTicks;
-	int OmegaTimeTicks;
+	 /* Settings variables */
+	 int NumberOfRobots;
+	 int NumberOfDeadRobots;
+	 float ShortRepulsionDistance;
+	 float LongRepulsionDistance;
+	 int TimeForFailureTicks;
+	 int OmegaTimeTicks;
+   float TargetPositionTolerance;
+   CVector3 BeaconPosition;
 
    void flockingVector();
    void epuckObstacleAvoidance();
    float drawFromPowerLawDistribution( float min, float max, float mu );
    bool detectedBeaconLight();
+   bool flockReachedBeacon();
+   void powerFailure();
+   void sensorFailure();
+   void motorFailure();
 
-
+   /* Pointer to the quadrotor position actuator */
+   CCI_QuadRotorPositionActuator* m_pcPosAct;
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
    CCI_ProximitySensor* m_pcProximity;
-
+   /* Pointer to the positioning sensor */
    CCI_PositioningSensor* m_pcPosSens;
    /* Pointer to the range and bearing actuator */
    CCI_RangeAndBearingActuator*  m_pcRABA;
    /* Pointer to the range and bearing sensor */
    CCI_RangeAndBearingSensor* m_pcRABS;
-
+   /* Pointer to the eye-bot light sensor */
    CCI_EyeBotLightSensor* m_pcLightSens;
    /*
     * The following variables are used as parameters for the
