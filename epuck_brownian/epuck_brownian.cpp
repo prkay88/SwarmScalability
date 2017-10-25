@@ -61,6 +61,12 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
     * have to recompile if we want to try other settings.
     */
    GetNodeAttributeOrDefault(t_node, "velocity", m_fWheelVelocity, m_fWheelVelocity);
+   GetNodeAttribute(t_node, "NumberOfRobots",          NumberOfRobots);
+   GetNodeAttribute(t_node, "NumberOfDeadRobots",      NumberOfDeadRobots);
+   GetNodeAttribute(t_node, "ShortRepulsionDistance",  ShortRepulsionDistance);
+   GetNodeAttribute(t_node, "LongRepulsionDistance",   LongRepulsionDistance);
+   GetNodeAttribute(t_node, "TimeForFailureTicks",     TimeForFailureTicks);
+   GetNodeAttribute(t_node, "OmegaTimeTicks",          OmegaTimeTicks);
 }
 
 /****************************************/
@@ -78,7 +84,10 @@ void CEPuckBrownian::flockingVector(){
     UInt32 inRadiusCount=0;
     for(size_t i = 0; i < tMsgs.size(); ++i) {
        if(tMsgs[i].Data[0] != DEAD){
+
+       	  /* Is the robot is within the replusion distance? */
           if(tMsgs[i].Range < repulsionDistance){
+          	/* Sum up the angles of the robots within the repulsion distance */
             /*Not sure if this is the right way to calculate the vector */
             //resultVector += CVector2(tMsgs[i].Range, tMsgs[i].HorizontalBearing);
             angleAccumulator += tMsgs[i].HorizontalBearing.GetValue();
@@ -86,10 +95,13 @@ void CEPuckBrownian::flockingVector(){
           }
        }
     }
+
+    /* Preform obstacle avoidence for those robots */
     if(inRadiusCount > 0){
       argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
       epuckObstacleAvoidance();
     }
+
     /* Continue going until we've reached the threshold before turning back to the flock */
     else if(timeSinceLastAvoidance < moveTowardsFlockThreshold){
       /*We want to continue same direction we're currently going */
@@ -98,6 +110,7 @@ void CEPuckBrownian::flockingVector(){
       argos::LOG <<"Moving straight with timeSinceLastAvoidance = " << timeSinceLastAvoidance <<std::endl;
 
     }
+
     /* This will be the attractive behavior */
     else{
       argos::LOG << "Inside attractive behavior" << std::endl;

@@ -86,6 +86,14 @@ public:
 private:
 
 
+	/* Settings variables */
+	int NumberOfRobots;
+	int NumberOfDeadRobots;
+	int ShortRepulsionDistance;
+	int LongRepulsionDistance;
+	int TimeForFailureTicks;
+	int OmegaTimeTicks;
+
    void flockingVector();
    void epuckObstacleAvoidance();
    float drawFromPowerLawDistribution( float min, float max, float mu );

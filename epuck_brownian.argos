@@ -33,7 +33,14 @@
                             medium="rab"
                             show_rays="true"/>
       </sensors>
-      <params velocity="5" />
+      <params velocity="5" 
+              NumberOfRobots = "10"
+              NumberOfDeadRobots = "2"
+              ShortRepulsionDistance = "2.5"
+              LongRepulsionDistance  = "5.0"
+              TimeForFailureTicks = "600" 
+              OmegaTimeTicks = "25"/>
+
     </epuck_brownian_controller>
 
   </controllers>
@@ -67,10 +74,20 @@
     -->
 
     <distribute>
-      <position method="uniform" min="-0.15,-0.15,0" max="0.15,0.15,0" />
+      <position method="uniform" min="-0.5,-0.5,0" max="0.5,0.5,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="10" max_trials="100">
-        <e-puck id="fb">
+        <e-puck id="ep">
+          <controller config="fdc" />
+        </e-puck>
+      </entity>
+    </distribute>
+
+    <distribute>
+      <position method="uniform" min="-0.5,-0.5,0" max="0.5,0.5,0" />
+      <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
+      <entity quantity="2" max_trials="100">
+        <e-puck id="dead">
           <controller config="fdc" />
         </e-puck>
       </entity>
@@ -125,7 +142,10 @@
   <!-- * Visualization * -->
   <!-- ****************** -->
   <visualization>
-    <qt-opengl />
+    <qt-opengl>
+      <user_functions library="build/loop_functions/id_loop_functions/libid_loop_functions"
+                      label="id_qtuser_functions" />
+    </qt-opengl>
   </visualization>
 
 </argos-configuration>
