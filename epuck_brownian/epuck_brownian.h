@@ -103,7 +103,7 @@ private:
    CVector3 BeaconPosition;
    string results_path;
 
-   void flockingVector();
+   void flockingVector(float repulsionDistance);
    void epuckObstacleAvoidance();
    float drawFromPowerLawDistribution( float min, float max, float mu );
    bool detectedBeaconLight();
@@ -142,14 +142,14 @@ private:
    float max_time_turning = 0;
    float time_spent_going_straight = 0;
    float time_to_turn_2pi = 15;
-   
+
    float angleAccumulator;
    float repulsionDistance = 2.5; //Max distance that a robot repulses another
    float timeSinceLastAvoidance = 0;
    float moveTowardsFlockThreshold = 2.5;
    bool turningTowardsFlock = false;
    bool turn_left = false;
-  
+
    enum State {FLOCKING, SEEN_GOAL, DEAD,   }; //Add other two error states
 
 };
