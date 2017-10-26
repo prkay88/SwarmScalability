@@ -78,8 +78,39 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CEPuckBrownian::ControlStep() {
-  flockingVector();
-  flockReachedBeacon();
+  /*Using the state variable to determine what to do */
+  switch (myState) {
+    /*Main case where robots try to maintain a relative proximity to one another */
+    case FLOCKING:
+      flockingVector(2.5);
+      /*If a robot can dected the beacon they transition state */
+      if(detectedBeaconLight())
+      {
+        myState = SEEN_GOAL;
+      }
+      break;
+   /*After a robot has seen the goal, they ar allowed to move farther away from the center of swarm */
+    case SEEN_GOAL:
+      flockingVector(5.5);
+      /*If a robot has reached the beacon it transitions to another state to let the swarm know it has reached its goal */
+      if(flockReachedBeacon())
+      {
+        myState = FOUND_BEACON;
+      }
+      break;
+    /*Modeling where a robot loses power completely */
+    case CASE_1_ERROR:
+      powerFailure();
+      break;
+    /*Modeling where a robot loses its sensors to detect rest of swarm */
+    case CASE_2_ERROR:
+      sensorFailure();
+      break;
+    /*Modeling  where robot loses power to motor but maintains in contact with other robots */
+    case CASE_3_ERROR:
+      motorFailure();
+      break;
+  }
   stringstream ss;
   string results_file_name = ss.str();
   results_full_path = results_path;
@@ -87,13 +118,13 @@ void CEPuckBrownian::ControlStep() {
   if(GetId().compare("ep1") == 0 && flockReachedBeacon())
   {
     ofstream results_output_stream;
-    results_output_stream.open(results_full_path, ios::app); 
+    results_output_stream.open(results_full_path, ios::app);
     results_output_stream << "NumberOfRobots, "
                           << "NumberOfDeadRobots, "
                           << "ShortRepulsionDistance, "
                           << "LongRepulsionDistance, "
                           << "TimeForFailureTicks, "
-                          << "OmegaTimeTicks, " 
+                          << "OmegaTimeTicks, "
                           << "TotalTime" << endl
                           << NumberOfRobots << ", "
                           << NumberOfDeadRobots << ", "
@@ -101,29 +132,28 @@ void CEPuckBrownian::ControlStep() {
                           << LongRepulsionDistance << ", "
                           << TimeForFailureTicks << ", "
                           << OmegaTimeTicks << endl;
-                        //  << CSimulator::GetInstance().GetRandomSeed() << endl; 
+                        //  << CSimulator::GetInstance().GetRandomSeed() << endl;
     results_output_stream.close();
     cout << "Finished Initializing the epuck_brownian" << std::endl;
   }
+  /*Sending the robots state to all other robots */
+  m_pcRABA->SetData(0, myState);
   totalTime++;
 }
 
 void CEPuckBrownian::flockingVector(){
-
+  /*Getting the data from all other robots */
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
   argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
+  /*Checking to see if our packet contains data */
   if(! tMsgs.empty()) {
     UInt32 inRadiusCount=0;
     for(size_t i = 0; i < tMsgs.size(); ++i) {
-       if(tMsgs[i].Data[0] != DEAD){
-
-       	  /* Is the robot is within the replusion distance? */
+       /*If a robot is in Case 1 or Case 2 error we ignore any data that they send */
+       if(tMsgs[i].Data[0] != CASE_1_ERROR && tMsgs[i].Data[0] != CASE_2_ERROR){
+          /*Checking to see if there are any robots that we should repulse from */
           if(tMsgs[i].Range < repulsionDistance){
-          	/* Sum up the angles of the robots within the repulsion distance */
-            /*Not sure if this is the right way to calculate the vector */
-            //resultVector += CVector2(tMsgs[i].Range, tMsgs[i].HorizontalBearing);
-            angleAccumulator += tMsgs[i].HorizontalBearing.GetValue();
             inRadiusCount++;
           }
        }
@@ -268,20 +298,20 @@ bool CEPuckBrownian::detectedBeaconLight()
   return false;
 }
 
-/* Checks if any rover is within the ShortRepulsionDistance using 
+/* Checks if any rover is within the ShortRepulsionDistance using
    the QuadRotorPositionActuator to the beacon and returns a boolean */
 bool CEPuckBrownian::flockReachedBeacon()
 {
   RobotPosition = m_pcPosSens->GetReading().Position;
 
-  float beacon_x = BeaconPosition.GetX(); 
+  float beacon_x = BeaconPosition.GetX();
   float beacon_y = BeaconPosition.GetY();
   float robot_x = RobotPosition.GetX();
   float robot_y = RobotPosition.GetY();
 
   float euclid_dist = (beacon_x - robot_x) * (beacon_x - robot_x) +
                       (beacon_y - robot_y) * (beacon_y - robot_y);
-  
+
   if(euclid_dist < 0.01){
     argos::LOG << "Beacon light reached " << std::endl;
     argos::LOG << " robot_x : " << robot_x << " robot_y: " << robot_y << std::endl;
@@ -289,12 +319,12 @@ bool CEPuckBrownian::flockReachedBeacon()
     argos::LOG << "euclid_dist: " << euclid_dist << std::endl;
     return true;
   }
-  return false;  
+  return false;
 }
 
 /* CASE 1: Failure when the robots are dead due to powerfailure */
 void CEPuckBrownian::powerFailure()
-{ 
+{
   m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
 }
 
