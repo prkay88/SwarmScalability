@@ -5,12 +5,12 @@
 /* Function definitions for logging */
 #include <argos3/core/utility/logging/argos_log.h>
 
-#include <math.h> // for sin(), cos(), and pow()
+#include <math.h>   // for sin(), cos(), and pow()
 #include <stdlib.h> // For rand()
-#include <limits> // For max and min values
-
-
-
+#include <limits>   // For max and min values
+#include <iostream> // Stream class to write on files
+#include <fstream> // Stream class to read from files
+#include <string>
 /****************************************/
 /****************************************/
 
@@ -49,7 +49,6 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
     * list a device in the XML and then you request it here, an error
     * occurs.
     */
-  // m_pcPosAct    = GetActuator<CCI_QuadRotorPositionActuator   >("quadrotor_position");
    m_pcWheels    = GetActuator<CCI_DifferentialSteeringActuator>("differential_steering");
    m_pcProximity = GetSensor  <CCI_ProximitySensor             >("proximity"    );
    m_pcPosSens   = GetSensor  <CCI_PositioningSensor           >("positioning"       );
@@ -71,15 +70,42 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
    GetNodeAttribute(t_node, "TimeForFailureTicks",     TimeForFailureTicks);
    GetNodeAttribute(t_node, "OmegaTimeTicks",          OmegaTimeTicks);
    GetNodeAttribute(t_node, "BeaconPosition",          BeaconPosition);
+   GetNodeAttribute(t_node, "GoalThreshold",		   GoalThreshold);
+   GetNodeAttribute(t_node, "ResultsDirectoryPath",    results_path);
 }
 
 /****************************************/
 /****************************************/
 
 void CEPuckBrownian::ControlStep() {
-   //flockingVector();
-   //flockReachedBeacon();
-   motorFailure();
+  flockingVector();
+  flockReachedBeacon();
+  stringstream ss;
+  string results_file_name = ss.str();
+  results_full_path = results_path;
+  LOG << "results_full_path " << results_full_path << std::endl;
+  if(GetId().compare("ep1") == 0 && flockReachedBeacon())
+  {
+    ofstream results_output_stream;
+    results_output_stream.open(results_full_path, ios::app); 
+    results_output_stream << "NumberOfRobots, "
+                          << "NumberOfDeadRobots, "
+                          << "ShortRepulsionDistance, "
+                          << "LongRepulsionDistance, "
+                          << "TimeForFailureTicks, "
+                          << "OmegaTimeTicks, " 
+                          << "TotalTime" << endl
+                          << NumberOfRobots << ", "
+                          << NumberOfDeadRobots << ", "
+                          << ShortRepulsionDistance << ", "
+                          << LongRepulsionDistance << ", "
+                          << TimeForFailureTicks << ", "
+                          << OmegaTimeTicks << endl;
+                        //  << CSimulator::GetInstance().GetRandomSeed() << endl; 
+    results_output_stream.close();
+    cout << "Finished Initializing the epuck_brownian" << std::endl;
+  }
+  totalTime++;
 }
 
 void CEPuckBrownian::flockingVector(){
@@ -172,6 +198,7 @@ void CEPuckBrownian::flockingVector(){
     }
   }
 }
+
 void CEPuckBrownian::epuckObstacleAvoidance()
 {
   /* Get the highest reading in front of the robot, which corresponds to the closest object */
@@ -245,12 +272,24 @@ bool CEPuckBrownian::detectedBeaconLight()
    the QuadRotorPositionActuator to the beacon and returns a boolean */
 bool CEPuckBrownian::flockReachedBeacon()
 {
-  //m_pcPosAct->SetAbsolutePosition(BeaconPosition);
-  // if(Distance(BeaconPosition, m_pcPosSens->GetReading().Position) > ShortRepulsionDistance) {
-  //   return false;
-  // }
-  argos::LOG << "Beacon light reached " << std::endl;
-  return true;
+  RobotPosition = m_pcPosSens->GetReading().Position;
+
+  float beacon_x = BeaconPosition.GetX(); 
+  float beacon_y = BeaconPosition.GetY();
+  float robot_x = RobotPosition.GetX();
+  float robot_y = RobotPosition.GetY();
+
+  float euclid_dist = (beacon_x - robot_x) * (beacon_x - robot_x) +
+                      (beacon_y - robot_y) * (beacon_y - robot_y);
+  
+  if(euclid_dist < 0.01){
+    argos::LOG << "Beacon light reached " << std::endl;
+    argos::LOG << " robot_x : " << robot_x << " robot_y: " << robot_y << std::endl;
+    argos::LOG << " beacon_x : " << beacon_x << " beacon_y : " << beacon_y << std::endl;
+    argos::LOG << "euclid_dist: " << euclid_dist << std::endl;
+    return true;
+  }
+  return false;  
 }
 
 /* CASE 1: Failure when the robots are dead due to powerfailure */
@@ -289,7 +328,6 @@ void CEPuckBrownian::motorFailure()
   {
      m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
   }
-
 }
 
 /****************************************/

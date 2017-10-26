@@ -1,0 +1,2 @@
+NumberOfRobots, NumberOfDeadRobots, ShortRepulsionDistance, LongRepulsionDistance, TimeForFailureTicks, OmegaTimeTicks
+10, 2, 2.5, 5, 600, 25

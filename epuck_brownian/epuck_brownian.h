@@ -18,8 +18,6 @@
  */
 /* Definition of the CCI_Controller class. */
 #include <argos3/core/control_interface/ci_controller.h>
-/* Definition of the quadrotor positioning actuator */
-#include <argos3/plugins/robots/generic/control_interface/ci_quadrotor_position_actuator.h>
 /* Definition of the differential steering actuator */
 #include <argos3/plugins/robots/generic/control_interface/ci_differential_steering_actuator.h>
 /* Definition of proximity sensor */
@@ -34,6 +32,11 @@
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
 /* Definition of the CRange variable */
 #include <argos3/core/utility/math/range.h>
+
+#include <string>
+
+using namespace argos;
+using namespace std;
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -89,15 +92,16 @@ public:
 
 private:
 
-	 /* Settings variables */
-	 int NumberOfRobots;
-	 int NumberOfDeadRobots;
-	 float ShortRepulsionDistance;
-	 float LongRepulsionDistance;
-	 int TimeForFailureTicks;
-	 int OmegaTimeTicks;
-   float TargetPositionTolerance;
+   /* Init variables */
+   int NumberOfRobots;
+   int NumberOfDeadRobots;
+   int TimeForFailureTicks;
+   int OmegaTimeTicks;
+   float ShortRepulsionDistance;
+   float LongRepulsionDistance;
+   float GoalThreshold;
    CVector3 BeaconPosition;
+   string results_path;
 
    void flockingVector();
    void epuckObstacleAvoidance();
@@ -108,8 +112,6 @@ private:
    void sensorFailure();
    void motorFailure();
 
-   /* Pointer to the quadrotor position actuator */
-   CCI_QuadRotorPositionActuator* m_pcPosAct;
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
    /* Pointer to the e-puck proximity sensor */
@@ -128,23 +130,26 @@ private:
     * of the XML configuration file, under the
     * <controllers><epuck_brownian_controller> section.
     */
+
    /* Wheel speed. */
    Real m_fWheelVelocity;
-
-   bool map[100][100];
+   string results_full_path;
+   CVector3 RobotPosition;
+   int totalTime = 0;
 
    float max_time_between_turns = 5; //seconds
    float time_spent_turning = 0;
    float max_time_turning = 0;
    float time_spent_going_straight = 0;
    float time_to_turn_2pi = 15;
-   bool turn_left = false;
-
+   
+   float angleAccumulator;
    float repulsionDistance = 2.5; //Max distance that a robot repulses another
    float timeSinceLastAvoidance = 0;
    float moveTowardsFlockThreshold = 2.5;
    bool turningTowardsFlock = false;
-   float angleAccumulator;
+   bool turn_left = false;
+  
    enum State {FLOCKING, SEEN_GOAL, DEAD,   }; //Add other two error states
 
 };
