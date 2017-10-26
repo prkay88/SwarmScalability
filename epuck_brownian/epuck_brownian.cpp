@@ -141,7 +141,7 @@ void CEPuckBrownian::ControlStep() {
   totalTime++;
 }
 
-void CEPuckBrownian::flockingVector(){
+void CEPuckBrownian::flockingVector(float repulsionDistance){
   /*Getting the data from all other robots */
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
@@ -180,7 +180,7 @@ void CEPuckBrownian::flockingVector(){
       if(!turningTowardsFlock){
         for(size_t i =0; i <tMsgs.size(); i++){
           /*Move towards center of swarm */
-          if(tMsgs[i].Data[0] != DEAD){
+          if(ttMsgs[i].Data[0] != CASE_1_ERROR && tMsgs[i].Data[0] != CASE_2_ERROR){
             angleAccumulator += tMsgs[i].HorizontalBearing.GetValue();
             countOFAliveBots++;
           }

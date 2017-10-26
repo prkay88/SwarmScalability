@@ -150,7 +150,9 @@ private:
    bool turningTowardsFlock = false;
    bool turn_left = false;
 
-   enum State {FLOCKING, SEEN_GOAL, DEAD,   }; //Add other two error states
+   enum State {FLOCKING, SEEN_GOAL, FOUND_BEACON, CASE_1_ERROR, CASE_2_ERROR, CASE_3_ERROR }; //Add other two error states
+
+   State myState = FLOCKING;
 
 };
 
