@@ -114,7 +114,7 @@ void CEPuckBrownian::ControlStep() {
   stringstream ss;
   string results_file_name = ss.str();
   results_full_path = results_path;
-  LOG << "results_full_path " << results_full_path << std::endl;
+  //LOG << "results_full_path " << results_full_path << std::endl;
   if(GetId().compare("ep1") == 0 && flockReachedBeacon())
   {
     ofstream results_output_stream;
@@ -134,7 +134,7 @@ void CEPuckBrownian::ControlStep() {
                           << OmegaTimeTicks << endl;
                         //  << CSimulator::GetInstance().GetRandomSeed() << endl;
     results_output_stream.close();
-    cout << "Finished Initializing the epuck_brownian" << std::endl;
+    //cout << "Finished Initializing the epuck_brownian" << std::endl;
   }
   /*Sending the robots state to all other robots */
   m_pcRABA->SetData(0, myState);
@@ -145,7 +145,7 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
   /*Getting the data from all other robots */
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
-  argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
+  //argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
   /*Checking to see if our packet contains data */
   if(! tMsgs.empty()) {
     UInt32 inRadiusCount=0;
@@ -161,7 +161,7 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
 
     /* Preform obstacle avoidence for those robots */
     if(inRadiusCount > 0){
-      argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
+      //argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
       epuckObstacleAvoidance();
     }
 
@@ -170,17 +170,17 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
       /*We want to continue same direction we're currently going */
       m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
       timeSinceLastAvoidance++;
-      argos::LOG <<"Moving straight with timeSinceLastAvoidance = " << timeSinceLastAvoidance <<std::endl;
+      //argos::LOG <<"Moving straight with timeSinceLastAvoidance = " << timeSinceLastAvoidance <<std::endl;
 
     }
 
     /* This will be the attractive behavior */
     else{
-      argos::LOG << "Inside attractive behavior" << std::endl;
+      //argos::LOG << "Inside attractive behavior" << std::endl;
       if(!turningTowardsFlock){
         for(size_t i =0; i <tMsgs.size(); i++){
           /*Move towards center of swarm */
-          if(ttMsgs[i].Data[0] != CASE_1_ERROR && tMsgs[i].Data[0] != CASE_2_ERROR){
+          if(tMsgs[i].Data[0] != CASE_1_ERROR && tMsgs[i].Data[0] != CASE_2_ERROR){
             angleAccumulator += tMsgs[i].HorizontalBearing.GetValue();
             countOFAliveBots++;
           }
@@ -191,7 +191,11 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
           float angleAccFloat = (float) angleAccumulator;
           float term =  (time_to_turn_2pi/(2*M_PI));
           max_time_turning = (angleAccFloat*term);
-          argos::LOG <<"max_time_turning: " << max_time_turning << std::endl;
+          if(max_time_turning >(2*M_PI) || max_time_turning < (-2*M_PI))
+          {
+            max_time_turning = 2*M_PI;
+          }
+          //argos::LOG <<"max_time_turning: " << max_time_turning << std::endl;
           if(angleAccFloat <0){
             m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
             turn_left = true;
@@ -216,6 +220,9 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
           else{
             m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
           }
+          //argos::LOG <<"max_time_turning: " << max_time_turning << std::endl;
+          //argos::LOG <<"time_spent_turning: " << time_spent_turning << std::endl;
+          time_spent_turning++;
         }
         //if exceed max time we go stright.
         else{
@@ -291,8 +298,20 @@ bool CEPuckBrownian::detectedBeaconLight()
 
   for(size_t i =0; i < lightReadings.size(); ++i){
     if(lightReadings[i].Value > 0.0){
-      argos::LOG << "Beacon light detected " << std::endl;
-      return true;
+
+        float beacon_x = BeaconPosition.GetX();
+        float beacon_y = BeaconPosition.GetY();
+        float robot_x = RobotPosition.GetX();
+        float robot_y = RobotPosition.GetY();
+
+        float euclid_dist = (beacon_x - robot_x) * (beacon_x - robot_x) +
+                            (beacon_y - robot_y) * (beacon_y - robot_y);
+        if(euclid_dist < 1)
+        {
+          argos::LOG << "Beacon light detected " << std::endl;
+          return true;
+        }
+
     }
   }
   return false;
