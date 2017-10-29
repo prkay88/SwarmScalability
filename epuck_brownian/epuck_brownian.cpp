@@ -82,7 +82,7 @@ void CEPuckBrownian::ControlStep() {
   switch (myState) {
     /*Main case where robots try to maintain a relative proximity to one another */
     case FLOCKING:
-      flockingVector(2.5);
+      flockingVector(15);
       /*If a robot can dected the beacon they transition state */
       if(detectedBeaconLight())
       {
@@ -91,13 +91,17 @@ void CEPuckBrownian::ControlStep() {
       break;
    /*After a robot has seen the goal, they ar allowed to move farther away from the center of swarm */
     case SEEN_GOAL:
-      flockingVector(5.5);
+      flockingVector(25);
       /*If a robot has reached the beacon it transitions to another state to let the swarm know it has reached its goal */
       if(flockReachedBeacon())
       {
         myState = FOUND_BEACON;
       }
       break;
+      case FOUND_BEACON:
+      //argos::LOG <<"Calling Found Beacon"<<std::endl;
+        m_pcWheels->SetLinearVelocity(0,0);
+        break;
     /*Modeling where a robot loses power completely */
     case CASE_1_ERROR:
       powerFailure();
@@ -145,16 +149,24 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
   /*Getting the data from all other robots */
   const CCI_RangeAndBearingSensor::TReadings& tMsgs = m_pcRABS->GetReadings();
   UInt32 countOFAliveBots=0;
-  //argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
+  float closestRange = 10000000;
+  float closestAngle = 0;
+//  argos::LOG <<"tMsgs.size = " << tMsgs.size() << std::endl;
   /*Checking to see if our packet contains data */
   if(! tMsgs.empty()) {
     UInt32 inRadiusCount=0;
-    for(size_t i = 0; i < tMsgs.size(); ++i) {
+    for(size_t i = 1; i < tMsgs.size(); ++i) {
        /*If a robot is in Case 1 or Case 2 error we ignore any data that they send */
        if(tMsgs[i].Data[0] != CASE_1_ERROR && tMsgs[i].Data[0] != CASE_2_ERROR){
           /*Checking to see if there are any robots that we should repulse from */
+          //argos::LOG << "Range is: " << tMsgs[i].Range  << std::endl;
           if(tMsgs[i].Range < repulsionDistance){
             inRadiusCount++;
+            if(tMsgs[i].Range < closestRange)
+            {
+              closestRange = tMsgs[i].Range;
+              closestAngle = tMsgs[i].HorizontalBearing.GetValue();
+            }
           }
        }
     }
@@ -162,7 +174,33 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
     /* Preform obstacle avoidence for those robots */
     if(inRadiusCount > 0){
       //argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
-      epuckObstacleAvoidance();
+      //epuckObstacleAvoidance();
+      if(closestAngle >= 0 )
+      {
+        int r = rand() %10;
+        if(r >1)
+        {
+          m_pcWheels->SetLinearVelocity(-m_fWheelVelocity, -m_fWheelVelocity);
+        }
+        else
+        {
+          m_pcWheels->SetLinearVelocity(-m_fWheelVelocity, m_fWheelVelocity/2);
+        }
+
+      }
+      else
+      {
+        int r = rand() %10;
+        if(r >1)
+        {
+          m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
+        }
+        else
+        {
+          m_pcWheels->SetLinearVelocity(m_fWheelVelocity/2, -m_fWheelVelocity);
+        }
+      }
+
     }
 
     /* Continue going until we've reached the threshold before turning back to the flock */
@@ -191,9 +229,14 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
           float angleAccFloat = (float) angleAccumulator;
           float term =  (time_to_turn_2pi/(2*M_PI));
           max_time_turning = (angleAccFloat*term);
-          if(max_time_turning >(2*M_PI) || max_time_turning < (-2*M_PI))
+          if(max_time_turning >(2*M_PI) )
+
           {
-            max_time_turning = 2*M_PI;
+            max_time_turning = M_PI;
+          }
+          if( max_time_turning < (-2*M_PI))
+          {
+            max_time_turning = -1*M_PI;
           }
           //argos::LOG <<"max_time_turning: " << max_time_turning << std::endl;
           if(angleAccFloat <0){
@@ -209,7 +252,7 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
 
         }
         //return averageBearing;
-        timeSinceLastAvoidance = 0;
+
       }
       //This is where we are turning towards the flocks
       else{
@@ -230,9 +273,13 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
           turningTowardsFlock = false;
           time_spent_turning = 0;
           max_time_turning = 0;
+          timeSinceLastAvoidance = 0;
         }
       }
     }
+  }
+  else{
+    //argos::LOG <<"Messages are empty"<<std::endl;
   }
 }
 

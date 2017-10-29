@@ -144,16 +144,17 @@ private:
    float time_to_turn_2pi = 15;
 
    float angleAccumulator;
-   float repulsionDistance = 2.5; //Max distance that a robot repulses another
+   float repulsionDistance = 20; //Max distance that a robot repulses another
    float timeSinceLastAvoidance = 0;
-   float moveTowardsFlockThreshold = 2.5;
+   float moveTowardsFlockThreshold = 4.5;
    bool turningTowardsFlock = false;
    bool turn_left = false;
+   bool goBackwards = false;
 
-   enum State {FLOCKING, SEEN_GOAL, FOUND_BEACON, CASE_1_ERROR, CASE_2_ERROR, CASE_3_ERROR }; //Add other two error states
+   UInt32 timeSteps = 0;
 
-   State myState = FLOCKING;
-
+   enum State {FLOCKING, SEEN_GOAL, FOUND_BEACON, CASE_1_ERROR, CASE_2_ERROR, CASE_3_ERROR };
+    State myState = SEEN_GOAL;
 };
 
 #endif
