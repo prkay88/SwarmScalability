@@ -21,7 +21,6 @@ CEPuckBrownian::CEPuckBrownian() :
    m_pcRABS(NULL),
    m_pcLightSens(NULL),
    m_fWheelVelocity(2.5f) {}
-   //m_pcLightSens(NULL) {}
 
 /****************************************/
 /****************************************/
@@ -70,14 +69,24 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
    GetNodeAttribute(t_node, "TimeForFailureTicks",     TimeForFailureTicks);
    GetNodeAttribute(t_node, "OmegaTimeTicks",          OmegaTimeTicks);
    GetNodeAttribute(t_node, "BeaconPosition",          BeaconPosition);
-   GetNodeAttribute(t_node, "GoalThreshold",		   GoalThreshold);
+   GetNodeAttribute(t_node, "GoalThreshold",	       GoalThreshold);
    GetNodeAttribute(t_node, "ResultsDirectoryPath",    results_path);
+
+   initRobotID();
+   printMoreInfo = false;
 }
 
 /****************************************/
 /****************************************/
 
 void CEPuckBrownian::ControlStep() {
+
+  if(totalTime == TimeForFailureTicks)
+  {
+    m_pcRABA->SetData(0, failureState);
+    myState = failureState;
+  }
+
   /*Using the state variable to determine what to do */
   switch (myState) {
     /*Main case where robots try to maintain a relative proximity to one another */
@@ -96,6 +105,7 @@ void CEPuckBrownian::ControlStep() {
       if(flockReachedBeacon())
       {
         myState = FOUND_BEACON;
+        writeOutputToFile();
       }
       break;
       case FOUND_BEACON:
@@ -115,34 +125,79 @@ void CEPuckBrownian::ControlStep() {
       motorFailure();
       break;
   }
-  stringstream ss;
-  string results_file_name = ss.str();
-  results_full_path = results_path;
-  //LOG << "results_full_path " << results_full_path << std::endl;
-  if(GetId().compare("ep1") == 0 && flockReachedBeacon())
-  {
-    ofstream results_output_stream;
-    results_output_stream.open(results_full_path, ios::app);
-    results_output_stream << "NumberOfRobots, "
-                          << "NumberOfDeadRobots, "
-                          << "ShortRepulsionDistance, "
-                          << "LongRepulsionDistance, "
-                          << "TimeForFailureTicks, "
-                          << "OmegaTimeTicks, "
-                          << "TotalTime" << endl
-                          << NumberOfRobots << ", "
-                          << NumberOfDeadRobots << ", "
-                          << ShortRepulsionDistance << ", "
-                          << LongRepulsionDistance << ", "
-                          << TimeForFailureTicks << ", "
-                          << OmegaTimeTicks << endl;
-                        //  << CSimulator::GetInstance().GetRandomSeed() << endl;
-    results_output_stream.close();
-    //cout << "Finished Initializing the epuck_brownian" << std::endl;
-  }
-  /*Sending the robots state to all other robots */
+
   m_pcRABA->SetData(0, myState);
   totalTime++;
+}
+
+/*Intializes the robot failure types base on the robot id 
+  after TimeForFailureTicks is reached the robot will
+  exhibit these failures.*/ 
+void CEPuckBrownian::initRobotID()
+{
+  //argos::LOG << "Calling initRobotID" << std::endl;
+  string id = GetId();
+  switch(id[0]){
+    case 'f':
+      failureState = FLOCKING;
+      break;
+    case 'p':
+      failureState = CASE_1_ERROR;
+      break;
+    case 's':
+      failureState = CASE_2_ERROR;
+      break;
+    case 'm':
+      failureState = CASE_3_ERROR;
+      break;
+  }
+}
+
+/* After one robot reached the beacon we will write output to file and exits the program 
+   source : https://github.com/BCLab-UNM/DDSA-ARGoS/blob/master/source/DSA/DSA_controller.cpp */
+void CEPuckBrownian::writeOutputToFile()
+{
+  /* Converts the ticks to seconds */
+  int totalTimeInSeconds = totalTime/10;
+
+  if(GetId().compare("f1") == 0)//&& flockReachedBeacon())
+  {
+    /* Prints info about the stimulation as well as the total time in seconds */
+    if(printMoreInfo == true)
+    {
+      ofstream results_output_stream;
+      results_output_stream.open(results_path, ios::app);
+      results_output_stream << "NumberOfRobots, "
+                            << "NumberOfDeadRobots, "
+                            << "ShortRepulsionDistance, "
+                            << "LongRepulsionDistance, "
+                            << "TimeForFailureTicks, "
+                            << "OmegaTimeTicks, "
+                            << "TotalTimeInSeconds" << endl
+                            << NumberOfRobots << ", "
+                            << NumberOfDeadRobots << ", "
+                            << ShortRepulsionDistance << ", "
+                            << LongRepulsionDistance << ", "
+                            << TimeForFailureTicks << ", "
+                            << OmegaTimeTicks << ", "
+                            << totalTimeInSeconds << endl;
+                          //  << CSimulator::GetInstance().GetRandomSeed() << endl;
+      //cout << "Finished Initializing the epuck_brownian" << std::endl;
+      results_output_stream.close();
+     }
+
+    /* Just prints the total time of stimulation in seconds to file */
+    else 
+    {
+      ofstream results_output_stream;
+      results_output_stream.open(results_path, ios::app);
+      results_output_stream << totalTimeInSeconds << endl;
+      results_output_stream.close();
+    }
+  }
+
+  /*exits the program is it safe to do this?*/
+  //exit(0);
 }
 
 void CEPuckBrownian::flockingVector(float repulsionDistance){
@@ -353,7 +408,7 @@ bool CEPuckBrownian::detectedBeaconLight()
 
         float euclid_dist = (beacon_x - robot_x) * (beacon_x - robot_x) +
                             (beacon_y - robot_y) * (beacon_y - robot_y);
-        if(euclid_dist < 1)
+        if(euclid_dist < 1.0)
         {
           argos::LOG << "Beacon light detected " << std::endl;
           return true;

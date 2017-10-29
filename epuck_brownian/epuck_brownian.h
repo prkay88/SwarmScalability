@@ -111,6 +111,8 @@ private:
    void powerFailure();
    void sensorFailure();
    void motorFailure();
+   void initRobotID();
+   void writeOutputToFile();
 
    /* Pointer to the differential steering actuator */
    CCI_DifferentialSteeringActuator* m_pcWheels;
@@ -136,6 +138,7 @@ private:
    string results_full_path;
    CVector3 RobotPosition;
    int totalTime = 0;
+   bool printMoreInfo = false;
 
    float max_time_between_turns = 5; //seconds
    float time_spent_turning = 0;
@@ -154,7 +157,8 @@ private:
    UInt32 timeSteps = 0;
 
    enum State {FLOCKING, SEEN_GOAL, FOUND_BEACON, CASE_1_ERROR, CASE_2_ERROR, CASE_3_ERROR };
-    State myState = SEEN_GOAL;
+   State myState = SEEN_GOAL;
+   State failureState;
 };
 
 #endif

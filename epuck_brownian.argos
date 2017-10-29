@@ -80,21 +80,21 @@
       <position method="uniform" min="-0.2,-0.2,0" max="0.2,0.2,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="10" max_trials="100">
-        <e-puck id="ep">
+        <e-puck id="f">
           <controller config="fdc" />
         </e-puck>
       </entity>
     </distribute>
 
-    <distribute>
+   <!--  <distribute>
       <position method="uniform" min="-0.5,-0.5,0" max="0.5,0.5,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="2" max_trials="100">
-        <e-puck id="dead">
+        <e-puck id="p">
           <controller config="fdc" />
         </e-puck>
       </entity>
-    </distribute>
+    </distribute> -->
 
     <!--
         We distribute 5 boxes uniformly in position and rotation around Z.
