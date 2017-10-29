@@ -130,9 +130,9 @@ void CEPuckBrownian::ControlStep() {
   totalTime++;
 }
 
-/*Intializes the robot failure types base on the robot id 
+/*Intializes the robot failure types base on the robot id
   after TimeForFailureTicks is reached the robot will
-  exhibit these failures.*/ 
+  exhibit these failures.*/
 void CEPuckBrownian::initRobotID()
 {
   //argos::LOG << "Calling initRobotID" << std::endl;
@@ -153,7 +153,7 @@ void CEPuckBrownian::initRobotID()
   }
 }
 
-/* After one robot reached the beacon we will write output to file and exits the program 
+/* After one robot reached the beacon we will write output to file and exits the program
    source : https://github.com/BCLab-UNM/DDSA-ARGoS/blob/master/source/DSA/DSA_controller.cpp */
 void CEPuckBrownian::writeOutputToFile()
 {
@@ -187,7 +187,7 @@ void CEPuckBrownian::writeOutputToFile()
      }
 
     /* Just prints the total time of stimulation in seconds to file */
-    else 
+    else
     {
       ofstream results_output_stream;
       results_output_stream.open(results_path, ios::app);
@@ -335,6 +335,7 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
   }
   else{
     //argos::LOG <<"Messages are empty"<<std::endl;
+    m_pcWheels->SetLinearVelocity(0,0);
   }
 }
 
