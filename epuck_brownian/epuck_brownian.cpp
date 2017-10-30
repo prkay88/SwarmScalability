@@ -86,11 +86,12 @@ void CEPuckBrownian::ControlStep() {
   {
     writeOutputToFile();
   }
-  
-  if(totalTime == timeForFailureTicks)
+
+  if(totalTime == TimeForFailureTicks)
   {
     m_pcRABA->SetData(0, failureState);
     myState = failureState;
+    //argos:LOG<<"at 600 ticks my state is: " <<myState << std::endl;
   }
 
   /*Using the state variable to determine what to do */
@@ -102,6 +103,11 @@ void CEPuckBrownian::ControlStep() {
       if(detectedBeaconLight())
       {
         myState = SEEN_GOAL;
+      }
+      if(flockReachedBeacon())
+      {
+        myState = FOUND_BEACON;
+        writeOutputToFile();
       }
       break;
    /*After a robot has seen the goal, they ar allowed to move farther away from the center of swarm */
@@ -133,7 +139,9 @@ void CEPuckBrownian::ControlStep() {
   }
 
   m_pcRABA->SetData(0, myState);
+
   totalTime++;
+  //if(totalTime %300 == 0) argos::LOG <<"myState: " << myState << std::endl;
 }
 
 /*Intializes the robot failure types base on the robot id
@@ -141,6 +149,7 @@ void CEPuckBrownian::ControlStep() {
   exhibit these failures.*/
 void CEPuckBrownian::initRobotID()
 {
+  //argos::LOG << "Calling initRobotID" << std::endl;
   string id = GetId();
   switch(id[0]){
     case 'f':
@@ -163,7 +172,7 @@ void CEPuckBrownian::initFailureTicks()
 {
   int min = 600; //ticks (1 min)
   int max = 1200;//ticks (2 min)
-  
+
   if(GetId().compare("f1") == 0)
   {
     timeForFailureTicks = rand() % 1200 + 600;
@@ -171,7 +180,8 @@ void CEPuckBrownian::initFailureTicks()
   }
 }
 
-/* After one robot reached the beacon we will write output to file
+
+/* After one robot reached the beacon we will write output to file and exits the program
    source : https://github.com/BCLab-UNM/DDSA-ARGoS/blob/master/source/DSA/DSA_controller.cpp */
 void CEPuckBrownian::writeOutputToFile()
 {
@@ -180,7 +190,6 @@ void CEPuckBrownian::writeOutputToFile()
 
   if(GetId().compare("f1") == 0)//&& flockReachedBeacon())
   {
-    argos::LOG<<"writeOutputToFile"<< std::endl;
     /* Prints info about the stimulation as well as the total time in seconds */
     if(printMoreInfo == true)
     {
@@ -209,12 +218,14 @@ void CEPuckBrownian::writeOutputToFile()
     else
     {
       ofstream results_output_stream;
-      LOG << "results_path " << results_path << std::endl;
       results_output_stream.open(results_path, ios::app);
-      results_output_stream << totalTimeInSeconds <<  ", " << flockReachedBeacon() <<endl;
+      results_output_stream << totalTimeInSeconds << endl;
       results_output_stream.close();
     }
   }
+
+  /*exits the program is it safe to do this?*/
+  //exit(0);
 }
 
 void CEPuckBrownian::flockingVector(float repulsionDistance){
@@ -245,7 +256,7 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
 
     /* Preform obstacle avoidence for those robots */
     if(inRadiusCount > 0){
-      //argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
+    //  if(totalTime %300 == 0) argos::LOG << "Using Epuck OA with inRadiusCount of:  " << inRadiusCount  << std::endl;
       //epuckObstacleAvoidance();
       if(closestAngle >= 0 )
       {
@@ -280,13 +291,13 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
       /*We want to continue same direction we're currently going */
       m_pcWheels->SetLinearVelocity(m_fWheelVelocity, m_fWheelVelocity);
       timeSinceLastAvoidance++;
-      //argos::LOG <<"Moving straight with timeSinceLastAvoidance = " << timeSinceLastAvoidance <<std::endl;
+      //if(totalTime %300 == 0)argos::LOG <<"Moving straight with timeSinceLastAvoidance = " << timeSinceLastAvoidance <<std::endl;
 
     }
 
     /* This will be the attractive behavior */
     else{
-      //argos::LOG << "Inside attractive behavior" << std::endl;
+      if(totalTime %300 == 0)argos::LOG << "Inside attractive behavior" << std::endl;
       if(!turningTowardsFlock){
         for(size_t i =0; i <tMsgs.size(); i++){
           /*Move towards center of swarm */
@@ -351,7 +362,7 @@ void CEPuckBrownian::flockingVector(float repulsionDistance){
     }
   }
   else{
-    //argos::LOG <<"Messages are empty"<<std::endl;
+  //  argos::LOG <<"Messages are empty"<<std::endl;
     m_pcWheels->SetLinearVelocity(0,0);
   }
 }
@@ -448,10 +459,10 @@ bool CEPuckBrownian::flockReachedBeacon()
   float robot_x = RobotPosition.GetX();
   float robot_y = RobotPosition.GetY();
 
-  float euclid_dist = (beacon_x - robot_x) * (beacon_x - robot_x) +
-                      (beacon_y - robot_y) * (beacon_y - robot_y);
+  float euclid_dist = pow(((beacon_x - robot_x) * (beacon_x - robot_x) +
+                      (beacon_y - robot_y) * (beacon_y - robot_y)), .5);
 
-  if(euclid_dist < 0.01){
+  if(euclid_dist < 0.5){
     argos::LOG << "Beacon light reached " << std::endl;
     argos::LOG << " robot_x : " << robot_x << " robot_y: " << robot_y << std::endl;
     argos::LOG << " beacon_x : " << beacon_x << " beacon_y : " << beacon_y << std::endl;
@@ -473,10 +484,10 @@ void CEPuckBrownian::sensorFailure()
   epuckObstacleAvoidance();
 }
 
-/* CASE 3: Failure when both wheels are broken */
+/* CASE 3: Failure when the right, left, or both wheels are broken */
 void CEPuckBrownian::motorFailure()
 {
-  m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
+   m_pcWheels->SetLinearVelocity(0.0f,0.0f);
 }
 
 /****************************************/
