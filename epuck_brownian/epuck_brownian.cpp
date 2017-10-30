@@ -73,6 +73,7 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
    GetNodeAttribute(t_node, "ResultsDirectoryPath",    results_path);
 
    initRobotID();
+   initFailureTicks();
    printMoreInfo = false;
 }
 
@@ -81,7 +82,12 @@ void CEPuckBrownian::Init(TConfigurationNode& t_node) {
 
 void CEPuckBrownian::ControlStep() {
 
-  if(totalTime == TimeForFailureTicks)
+  if(totalTime == maxRunTime)
+  {
+    writeOutputToFile();
+  }
+  
+  if(totalTime == timeForFailureTicks)
   {
     m_pcRABA->SetData(0, failureState);
     myState = failureState;
@@ -135,7 +141,6 @@ void CEPuckBrownian::ControlStep() {
   exhibit these failures.*/
 void CEPuckBrownian::initRobotID()
 {
-  //argos::LOG << "Calling initRobotID" << std::endl;
   string id = GetId();
   switch(id[0]){
     case 'f':
@@ -153,7 +158,20 @@ void CEPuckBrownian::initRobotID()
   }
 }
 
-/* After one robot reached the beacon we will write output to file and exits the program
+/* Sets timeForFailureTicks to be random number between 600 and 1200 ticks*/
+void CEPuckBrownian::initFailureTicks()
+{
+  int min = 600; //ticks (1 min)
+  int max = 1200;//ticks (2 min)
+  
+  if(GetId().compare("f1") == 0)
+  {
+    timeForFailureTicks = rand() % 1200 + 600;
+    argos::LOG<<"failure ticks "<< timeForFailureTicks << std::endl;
+  }
+}
+
+/* After one robot reached the beacon we will write output to file
    source : https://github.com/BCLab-UNM/DDSA-ARGoS/blob/master/source/DSA/DSA_controller.cpp */
 void CEPuckBrownian::writeOutputToFile()
 {
@@ -162,6 +180,7 @@ void CEPuckBrownian::writeOutputToFile()
 
   if(GetId().compare("f1") == 0)//&& flockReachedBeacon())
   {
+    argos::LOG<<"writeOutputToFile"<< std::endl;
     /* Prints info about the stimulation as well as the total time in seconds */
     if(printMoreInfo == true)
     {
@@ -190,14 +209,12 @@ void CEPuckBrownian::writeOutputToFile()
     else
     {
       ofstream results_output_stream;
+      LOG << "results_path " << results_path << std::endl;
       results_output_stream.open(results_path, ios::app);
-      results_output_stream << totalTimeInSeconds << endl;
+      results_output_stream << totalTimeInSeconds <<  ", " << flockReachedBeacon() <<endl;
       results_output_stream.close();
     }
   }
-
-  /*exits the program is it safe to do this?*/
-  //exit(0);
 }
 
 void CEPuckBrownian::flockingVector(float repulsionDistance){
@@ -456,30 +473,10 @@ void CEPuckBrownian::sensorFailure()
   epuckObstacleAvoidance();
 }
 
-/* CASE 3: Failure when the right, left, or both wheels are broken */
+/* CASE 3: Failure when both wheels are broken */
 void CEPuckBrownian::motorFailure()
 {
-  const char motorErrorsTypes[4] = {'0', '1', '2'};
-  int randType = rand() % 3; //generates a random number between 0 and 2
-  argos::LOG << motorErrorsTypes[randType] << std::endl;
-
-  /* spin left - right motor broken */
-  if(randType == 0)
-  {
-    m_pcWheels->SetLinearVelocity(m_fWheelVelocity, 0.0f);
-  }
-
-  /* spin right - left motor broken */
-  else if(randType == 1)
-  {
-    m_pcWheels->SetLinearVelocity(0.0f, m_fWheelVelocity);
-  }
-
-  /* stop - both motors are broken, powerfailure */
-  else
-  {
-     m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
-  }
+  m_pcWheels->SetLinearVelocity(0.0f, 0.0f);
 }
 
 /****************************************/

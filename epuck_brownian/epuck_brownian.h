@@ -112,6 +112,7 @@ private:
    void sensorFailure();
    void motorFailure();
    void initRobotID();
+   void initFailureTicks();
    void writeOutputToFile();
 
    /* Pointer to the differential steering actuator */
@@ -138,6 +139,8 @@ private:
    string results_full_path;
    CVector3 RobotPosition;
    int totalTime = 0;
+   int maxRunTime = 14999; //ticks (~25 minutes)
+   int timeForFailureTicks = 0;
    bool printMoreInfo = false;
 
    float max_time_between_turns = 5; //seconds
